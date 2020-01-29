@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -18,8 +19,16 @@ type TrelloCard struct {
 	Id string `json:"id"`
 	Name string `json:"name"`
 	DateLastActivity time.Time `json:"dateLastActivity"`
-	//Desc string `json:"desc"`
+	Desc string `json:"desc"`
 }
+
+type sortTrelloCards struct {
+	s []TrelloCard
+}
+
+func (s sortTrelloCards)Len() int { return len(s.s) }
+func (s sortTrelloCards)Less(i, j int) bool { return s.s[i].DateLastActivity.Before(s.s[j].DateLastActivity) }
+func (s sortTrelloCards)Swap(i, j int) { s.s[i], s.s[j] = s.s[j], s.s[i] }
 
 var (
 	boardsUrl = "https://api.trello.com/1/members/me/boards?%s"
@@ -49,6 +58,7 @@ func fetchTrelloCards(from, to time.Time) ([]TrelloCard, error) {
 		}
 	}
 
+	sort.Sort(sortTrelloCards{filteredCards})
 	return filteredCards, nil
 }
 

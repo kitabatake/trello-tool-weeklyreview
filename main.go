@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -27,16 +28,14 @@ func main () {
 
 	dailyCardsList := cardsToDailyCards(cards)
 
-	fmt.Println("count is ", len(cards))
-	for _, dcs := range dailyCardsList {
-		fmt.Printf("%s\n", dcs)
-	}
+	out := fmt.Sprintf("%s ~ %s\n\n", from.Format("2006-01-02"), to.Format("01-02"))
+	fmt.Println(out + generateMarkdown(dailyCardsList))
 }
 
 func cardsToDailyCards(cards []TrelloCard) []DailyCards {
 	dailyCardsMap := make(map[string]*DailyCards)
 	for _, card := range cards {
-		dayStr := card.DateLastActivity.Format("2006/01/02")
+		dayStr := card.DateLastActivity.Format("01/02")
 		if dailyCard, ok := dailyCardsMap[dayStr]; ok {
 			dailyCard.cards = append(dailyCard.cards, card)
 		} else {
@@ -52,4 +51,20 @@ func cardsToDailyCards(cards []TrelloCard) []DailyCards {
 		ret = append(ret, *v)
 	}
 	return ret
+}
+
+func generateMarkdown(dailyCards []DailyCards) string {
+	out := ""
+	for _, dailyCard := range dailyCards {
+		out += fmt.Sprintf("# %s\n\n", dailyCard.day)
+		for _, card := range dailyCard.cards {
+			out += fmt.Sprintf("## %s\n", card.Name)
+			if len(strings.TrimSpace(card.Desc)) > 0 {
+				out += "```\n" + card.Desc + "\n```\n"
+			}
+			out += "\n"
+		}
+		out += "\n---\n\n"
+	}
+	return out
 }
