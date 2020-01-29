@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type TrelloBoard struct {
+	Id string `json:"id"`
+}
+
 type TrelloCard struct {
 	Id string `json:"id"`
 	Name string `json:"name"`
@@ -18,13 +22,23 @@ type TrelloCard struct {
 }
 
 var (
-	boardsUrl = "https://api.trello.com/1/boards/%s/cards?%s"
+	boardsUrl = "https://api.trello.com/1/members/me/boards?%s"
+	cardsUrl = "https://api.trello.com/1/boards/%s/cards?%s"
 )
 
 func fetchTrelloCards(from, to time.Time) ([]TrelloCard, error) {
-	cards, err := trelloApiCards("qoy6rgiP")
+	boards, err := trelloApiBoards()
 	if err != nil {
 		return nil, err
+	}
+
+	cards := make([]TrelloCard, 0)
+	for _, board := range boards {
+		_cards, err := trelloApiCards(board.Id)
+		if err != nil {
+			return nil, err
+		}
+		cards = append(cards, _cards...)
 	}
 
 	filteredCards := []TrelloCard{}
@@ -46,7 +60,7 @@ func trelloApiCards(bordId string) ([]TrelloCard, error) {
 	urlParams.Add("filter", "closed")
 	urlParams.Add("since", "2020-01-10")
 
-	requestUrl := fmt.Sprintf(boardsUrl, bordId, urlParams.Encode())
+	requestUrl := fmt.Sprintf(cardsUrl, bordId, urlParams.Encode())
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return nil, err
@@ -62,4 +76,29 @@ func trelloApiCards(bordId string) ([]TrelloCard, error) {
 	}
 
 	return cards, nil
+}
+
+func trelloApiBoards() ([]TrelloBoard, error) {
+	urlParams := url.Values{}
+	urlParams.Add("key", os.Getenv("TRELLO_API_KEY"))
+	urlParams.Add("token", os.Getenv("TRELLO_TOKEN"))
+	urlParams.Add("fields", "id")
+	urlParams.Add("filter", "open")
+
+	requestUrl := fmt.Sprintf(boardsUrl, urlParams.Encode())
+	resp, err := http.Get(requestUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	var boards []TrelloBoard
+	err = json.Unmarshal(body, &boards)
+	if err != nil {
+		return nil, err
+	}
+
+	return boards, nil
 }
