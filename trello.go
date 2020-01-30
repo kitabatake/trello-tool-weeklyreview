@@ -74,6 +74,8 @@ func trelloApiCards(bordId string) ([]TrelloCard, error) {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return nil, err
+	} else if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("error occurred on api request proccess. response's http status is %s\n", resp.Status)
 	}
 
 	defer resp.Body.Close()
@@ -99,6 +101,8 @@ func trelloApiBoards() ([]TrelloBoard, error) {
 	resp, err := http.Get(requestUrl)
 	if err != nil {
 		return nil, err
+	} else if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("error occurred on api request proccess. response's http status is %s\n", resp.Status)
 	}
 
 	defer resp.Body.Close()
@@ -107,6 +111,7 @@ func trelloApiBoards() ([]TrelloBoard, error) {
 	var boards []TrelloBoard
 	err = json.Unmarshal(body, &boards)
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
 
