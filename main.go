@@ -17,7 +17,7 @@ func (dcs DailyCards) String() string {
 
 func main () {
 	now := time.Now()
-	to := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	to := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 59, time.Local)
 	from := to.AddDate(0, 0, -7)
 
 	cards, err := fetchTrelloCards(from, to)
@@ -35,7 +35,9 @@ func main () {
 func cardsToDailyCards(cards []TrelloCard) []DailyCards {
 	dailyCardsMap := make(map[string]*DailyCards)
 	for _, card := range cards {
-		dayStr := card.DateLastActivity.Format("01/02")
+
+		// Why subtract one day? Because card is archived at next morning of completion on assumed trello operation.
+		dayStr := card.DateLastActivity.AddDate(0, 0, -1).Format("01/02(Mon)")
 		if dailyCard, ok := dailyCardsMap[dayStr]; ok {
 			dailyCard.cards = append(dailyCard.cards, card)
 		} else {
