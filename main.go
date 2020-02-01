@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -15,6 +16,15 @@ func (dcs DailyCards) String() string {
 	return fmt.Sprintf("%s:\n%v\n---\n", dcs.day, dcs.cards)
 }
 
+type sortDailyCards struct {
+	s []DailyCards
+}
+
+func (s sortDailyCards)Len() int { return len(s.s) }
+func (s sortDailyCards)Less(i, j int) bool { return s.s[i].day < s.s[j].day }
+func (s sortDailyCards)Swap(i, j int) { s.s[i], s.s[j] = s.s[j], s.s[i] }
+
+
 func main () {
 	now := time.Now()
 	to := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 59, time.Local)
@@ -27,6 +37,7 @@ func main () {
 	}
 
 	dailyCardsList := cardsToDailyCards(cards)
+	sort.Sort(sortDailyCards{dailyCardsList})
 
 	out := fmt.Sprintf("%s ~ %s\n\n", from.Format("2006-01-02"), to.Format("01-02"))
 	fmt.Println(out + generateMarkdown(dailyCardsList))
@@ -37,7 +48,7 @@ func cardsToDailyCards(cards []TrelloCard) []DailyCards {
 	for _, card := range cards {
 
 		// Why subtract one day? Because card is archived at next morning of completion on assumed trello operation.
-		dayStr := card.DateLastActivity.AddDate(0, 0, -1).Format("01/02(Mon)")
+		dayStr := card.DateLastActivity.Local().AddDate(0, 0, -1).Format("01/02(Mon)")
 		if dailyCard, ok := dailyCardsMap[dayStr]; ok {
 			dailyCard.cards = append(dailyCard.cards, card)
 		} else {
